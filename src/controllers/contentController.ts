@@ -1,16 +1,27 @@
-import {RequestHandler} from "express";
-// todo import content modle
-
+import { RequestHandler } from 'express';
+import Content from '../models/contentModel';
 /// todo create async error handler
 
-const getContent: RequestHandler = async (req, res, next ) => {
-// dummy response
+const getContent: RequestHandler = async (req, res, next) => {
+  // dummy response
+  const content = await Content.find();
+  res.status(200).json({
+    data: content,
+  });
 
-    res.status(200).json({
-        message: 'Hello from content controller'
-    })
+  next();
+};
 
+const createContent: RequestHandler = async (req, res, next) => {
+  const newContent = await Content.create(req.body);
 
-    next();
-}
-export {getContent}
+  res.status(201).json({
+    status: 'Ok',
+    data: {
+      content: newContent,
+    },
+  });
+  next();
+};
+
+export { getContent, createContent };

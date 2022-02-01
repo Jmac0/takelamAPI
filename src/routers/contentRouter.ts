@@ -1,13 +1,8 @@
-import {Router} from 'express';
-import {getContent} from "../controllers/contentController";
+import { Router } from 'express';
+import { getContent, createContent } from '../controllers/contentController';
 
 const router = Router();
 
-////// todo import content controller
-
-router.route('/').get(getContent)
-.post()
-.patch()
-.delete()
+router.route('/').get(getContent).post(createContent).patch().delete();
 
 export default router;
