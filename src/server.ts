@@ -25,7 +25,11 @@ process.on('uncaughtException', (err) => {
 })();
 // connect to server
 const server = app.listen(port, () => {
-  console.log('Server Started');
+  if (process.env.NODE_ENV === 'dev') {
+    console.log('Development Server Started');
+  } else {
+    console.log('Production Server Started');
+  }
 });
 
 process.on('unhandledRejection', (err: { name: string; message: string }) => {

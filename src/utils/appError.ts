@@ -7,7 +7,7 @@ class AppError extends Error {
     super(message);
     // set status depending on statusCode
     this.status = statusCode.toString().startsWith('4') ? 'fail' : 'error';
-    // use this to check error with this value, and send json error response
+    // use isOperational to check error origin.
     this.isOperational = true;
 
     // remove this error from stack trace
