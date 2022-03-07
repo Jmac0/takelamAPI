@@ -2,45 +2,33 @@ import mongoose from 'mongoose';
 
 
 interface ContentInterface {
-  aboutTitle: {aboutTitle: string, unique: boolean[]};
-  about: string;
-  interiorsTitle: string;
-  interiors: string;
-  ukServicesTitle: string;
-  ukServices: string;
+  componentName: {componentName: string, unique: boolean  }
+  path: {componentName: string, unique: boolean  }
+  heading: string;
+  bodyText: string;
 }
-//todo remove unique
+
+
 const contentSchema = new mongoose.Schema<ContentInterface>({
-  aboutTitle: {
-    unique: [true, 'must be unique'],
+  componentName: {
+    unique: [true, 'Component names must be unique please chose another name'],
     type: String,
-    required: [true, 'About Page must have a title'],
-    minlength: [4, 'Title must be more than 4 characters'],
+    required: [true, 'A component must have a title'],
   },
-  about: {
+  path: {
+    unique: [true, 'Url path must be unique please chose another name'],
     type: String,
-    required: [true, 'About page cannot be blank'],
-    minlength: [10, 'About page must have more than 10 characters'],
+    required: [true, 'A Page must have a URL'],
   },
-  interiorsTitle: {
+  heading: {
     type: String,
-    required: [true, 'Interiors Page must have a title'],
-    minlength: [4, 'Title must be more than 4 characters'],
+    required: [true, 'A page must have a heading'],
+    minlength: [3, 'A page heading must have more than 3 characters'],
   },
-  interiors: {
+  bodyText: {
     type: String,
-    required: [true, 'Interiors page cannot be blank'],
-    minlength: [10, 'Interiors page must have more than 10 characters'],
-  },
-  ukServicesTitle: {
-    type: String,
-    required: [true, 'Uk Services Page must have a title'],
-    minlength: [4, 'Title must be more than 4 characters'],
-  },
-  ukServices: {
-    type: String,
-    required: [true, 'Uk services page cannot be blank'],
-    minlength: [10, 'Uk services page must have more than 10 characters'],
+    required: [true, 'A page must have some content '],
+    minlength: [4, 'Page content must be more than 4 characters long'],
   },
 });
 

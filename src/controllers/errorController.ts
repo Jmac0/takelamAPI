@@ -11,12 +11,14 @@ interface Error {
   name?: string | {};
   statusCode?: number;
   status?: string;
-  message?: string;
+  message?: string | {};
   stack?: string;
+  errors?: {}
   keyValue?: {
     aboutTitle?: string;
   };
 }
+
 const handleCastErrorDB = (err: Error): AppError => {
   const message = `invalid value ${err.value} for ${err.path} parameter`;
   return new AppError(message, 400);
@@ -27,9 +29,15 @@ const handleDuplicateFieldsDB = (err: Error): AppError => {
   const message = `Duplicate field input: '${errorField}' Must have unique value`;
   return new AppError(message, 400);
 };
-
+const handleValidationErrorDB = (err: Error) => {
+//const message: string = err.message!.replace("Validation failed:", "");
+  const messages: string = Object.values(err.errors as {}).map((el: any) => el.message).join('. ')
+  return new AppError(messages, 400);
+}
 /// extracted responses into functions for neatness
 const sendErrorDev = (err: Error, res: Response) => {
+
+
   res.status(err.statusCode as number).json({
     status: err.status,
     error: err,
@@ -37,8 +45,8 @@ const sendErrorDev = (err: Error, res: Response) => {
   });
 };
 
-const sendErrorProd = (err: Error, res: Response) => {
-  // check is error comes from our appError class and is an expected error
+const sendErrorProd = (err: AppError, res: Response) => {
+  // check if error comes from our appError class and is an expected error
   if (err.isOperational) {
     res.status(err.statusCode as number).json({
       status: err.status,
@@ -76,6 +84,8 @@ export default (
     if (error.name === 'CastError') error = handleCastErrorDB(error);
 // handle duplicate field entry errors
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+    // handle validation errors
+    if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
     // send production error
     sendErrorProd(error, res);
   }

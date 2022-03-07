@@ -7,13 +7,12 @@ import AppError from '../utils/appError';
 
 const getContent: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
-    const id = (req.params as {id: string}).id
     const content = await Content.find();
     if(content.length === 0){
       return next(new AppError('Nothing found in database: contact developer', 404))
     }
     res.status(200).json({
-      data: content,
+       content
     });
 
   }
@@ -48,7 +47,6 @@ const updateContent: RequestHandler = catchAsyncErrors(
       status: 'ok',
       data: content,
     });
-    next()
   }
 );
 
