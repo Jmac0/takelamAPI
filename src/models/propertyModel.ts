@@ -11,7 +11,7 @@ interface PropertyInterface {
   price: number;
   location: string;
   map: string;
-  images: [string];
+  image: string;
   floorPlan: [string];
 }
 
@@ -55,7 +55,7 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
   /*google geo data? */
   map: String,
 
-  images: [String],
+  image: String,
 
   floorPlan: [String],
 });

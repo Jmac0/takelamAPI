@@ -13,7 +13,7 @@ interface Error {
   status?: string;
   message?: string | {};
   stack?: string;
-  errors?: {}
+  errors?: {};
   keyValue?: {
     aboutTitle?: string;
   };
@@ -30,14 +30,14 @@ const handleDuplicateFieldsDB = (err: Error): AppError => {
   return new AppError(message, 400);
 };
 const handleValidationErrorDB = (err: Error) => {
-//const message: string = err.message!.replace("Validation failed:", "");
-  const messages: string = Object.values(err.errors as {}).map((el: any) => el.message).join('. ')
+  //const message: string = err.message!.replace("Validation failed:", "");
+  const messages: string = Object.values(err.errors as {})
+    .map((el: any) => el.message)
+    .join('. ');
   return new AppError(messages, 400);
-}
+};
 /// extracted responses into functions for neatness
 const sendErrorDev = (err: Error, res: Response) => {
-
-
   res.status(err.statusCode as number).json({
     status: err.status,
     error: err,
@@ -82,10 +82,11 @@ export default (
     let error = Object.assign(err);
     // handle cast errors
     if (error.name === 'CastError') error = handleCastErrorDB(error);
-// handle duplicate field entry errors
+    // handle duplicate field entry errors
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     // handle validation errors
-    if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
+    if (error.name === 'ValidationError')
+      error = handleValidationErrorDB(error);
     // send production error
     sendErrorProd(error, res);
   }

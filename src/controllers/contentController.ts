@@ -8,15 +8,15 @@ import AppError from '../utils/appError';
 const getContent: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const content = await Content.find();
-    if(content.length === 0){
-      return next(new AppError('Nothing found in database: contact developer', 404))
+    if (content.length === 0) {
+      return next(
+        new AppError('Nothing found in database: contact developer', 404)
+      );
     }
     res.status(200).json({
-       content
+      content,
     });
-
   }
-
 );
 
 const createContent: RequestHandler = catchAsyncErrors(
@@ -38,10 +38,9 @@ const updateContent: RequestHandler = catchAsyncErrors(
       runValidators: true,
     });
 
-    if(!content){
-      return next( new AppError('No content found', 404));
+    if (!content) {
+      return next(new AppError('No content found', 404));
     }
-
 
     res.status(200).json({
       status: 'ok',

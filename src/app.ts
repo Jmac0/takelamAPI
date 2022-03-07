@@ -20,7 +20,7 @@ app.use(
     limit: '10kb',
   })
 );
-
+app.use(express.static(`${__dirname}/public`));
 
 app.use('/api/v1/content', contentRouter);
 app.use('/api/v1/properties', propertyRouter);
