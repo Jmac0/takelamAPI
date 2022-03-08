@@ -13,6 +13,7 @@ interface PropertyInterface {
   map: string;
   image: string;
   floorPlan: [string];
+  cloudinary_id: string;
 }
 
 const propertySchema = new mongoose.Schema<PropertyInterface>({
@@ -56,6 +57,8 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
   map: String,
 
   image: String,
+
+  cloudinary_id: String,
 
   floorPlan: [String],
 });

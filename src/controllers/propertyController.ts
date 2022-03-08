@@ -1,14 +1,17 @@
 import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
-const multer = require('multer');
+const cloudinary = require("../utils/cloudinary");
 import Property from '../models/propertyModel';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
+/*
 type FileFilterCallback = (error: Error | null, fileType: boolean) => void;
 type FileDestinationCallback = (error: Error | null, destination: string) => void;
 type FileNameCallback = (error: Error | null, fileName: string) => void;
 
-// upload image to file system
+*/
+/////////// Multer upload image to file system  /////////////////////////
+/*
 const multerStorage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb: FileDestinationCallback) => {
     cb(null, `dist/properties/propertyImages`);
@@ -42,9 +45,12 @@ const upload = multer({
   fileFilter: multerFilter,
 });
 
-const uploadImage = upload.single('image');
-//////////////////////////////////////////////////////
 
+const uploadImage = upload.single('image');
+
+*/
+//////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
 const getAllProperties: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const property = await Property.find();
@@ -82,12 +88,19 @@ const createProperty: RequestHandler = catchAsyncErrors(
   }
 );
 
+
+
 const updateProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
+    // spread request object into new
     const body = {... req.body}
-    if(req.file) body.image = req.file.filename
-    const id = (req.params as { id: string }).id;
+    // check for image and add to body
+    if(req.file) body.image = req.file.filename;
+    //const result = await cloudinary.uploader.upload(req.file.path);
     // @ts-ignore
+    cloudinary.uploader.upload(`${req.file.path}`, function(error, result) {console.log(result, error)});
+    console.log(req.file)
+    const id = (req.params as { id: string }).id;
     const property = await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
@@ -128,5 +141,5 @@ export {
   createProperty,
   updateProperty,
   deleteProperty,
-  uploadImage,
+  //uploadImage,
 };
