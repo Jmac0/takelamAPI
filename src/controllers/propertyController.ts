@@ -1,56 +1,86 @@
 import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
-const cloudinary = require("../utils/cloudinary");
+const sharp = require('sharp');
+const cloudinary = require('../utils/cloudinary');
+// multer instance and config file
+const upload = require('../utils/multer');
 import Property from '../models/propertyModel';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
-/*
-type FileFilterCallback = (error: Error | null, fileType: boolean) => void;
-type FileDestinationCallback = (error: Error | null, destination: string) => void;
-type FileNameCallback = (error: Error | null, fileName: string) => void;
+import { Error } from 'mongoose';
+// multer method to upload multiple images puts files on req.body.files
+const uploadPropertyImages = upload.array('images', 20);
+// resize property images for gallery
+const resizePropertyImages: RequestHandler = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // check if file is on request object
+    if (!req.files) return next();
+    req.body.images = [];
+    // resize images
+    await Promise.all(
+      // @ts-ignore
+      req.files.map(async (image, i) => {
+        // @ts-ignore
+        await sharp(req!.files[i].path).resize(200, 200);
 
-*/
-/////////// Multer upload image to file system  /////////////////////////
-/*
-const multerStorage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb: FileDestinationCallback) => {
-    cb(null, `dist/properties/propertyImages`);
+        req.body.images.push({ path: image.path, name: image.originalname });
+      })
+    );
+    console.log(req.body.images);
 
-  },
-
-  filename: (req: any, file: Express.Multer.File, cb: FileNameCallback) => {
-// extract file extension from uploaded image
-    const ext = file.mimetype.split('/')[1];
-cb(null, `property-${req.params.id}-${Date.now()}.${ext}`)
-
-    },
-
-});
-
-const multerFilter = (
-  request: Request,
-  file: Express.Multer.File,
-  cb: FileFilterCallback
-): void => {
-  if (
-    file.mimetype.startsWith('image')) {
-    cb(null, true)
-  } else {
-    cb(new AppError('File not an image please upload an image', 400), false)
+    next();
   }
-}
+);
+// uploads multiple images to cloudinary server
+const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // get property name for cloudinary folder
+    const id = (req.params as { id: string }).id;
+    const property = await Property.findById(id);
+    if(!property) return new AppError('No property found', 404)
 
-const upload = multer({
-  storage: multerStorage,
-  fileFilter: multerFilter,
-});
+    // new property on req object for cloudinary responses
+    req.body.cloudImages = [];
+    // map over images array and await promises
+    await Promise.all(
+      req.body.images.map(async (image: { name: string; path: string }) => {
+        // @ts-ignore
+        await cloudinary.v2.uploader
+          .upload(image.path, {
+            public_id: `${property.title}/${image.name}`,
+            tags: [`${property.title}`],
+          })
+          .then((res: string[]) => {
+            req.body.cloudImages.push(res);
+          });
+      })
+    );
 
+    next();
+  }
+);
 
-const uploadImage = upload.single('image');
+const updateProperty: RequestHandler = catchAsyncErrors(
+  async (req: ExpressRequestHandler, res: Response, next: NextFunction) => {
+    // spread request object into new
+    const body = { ...req.body };
+    const id = (req.params as { id: string }).id;
+    const property = await Property.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
+    });
 
-*/
-//////////////////////////////////////////////////////
-/////////////////////////////////////////////////////
+    if (!property) {
+      return next(new AppError('No content found', 404));
+    }
+
+    res.status(200).json({
+      status: 'ok',
+      data: property,
+    });
+  }
+);
+
 const getAllProperties: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const property = await Property.find();
@@ -69,11 +99,23 @@ const getProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
+    let propertyImages: string[] = [];
+    await cloudinary.v2.api.resources(
+      {
+        type: 'upload',
+        prefix: `${property!.title}`, // add your folder
+      },
+      function (error: Error, result: any) {
+        propertyImages.push(result);
+      }
+    );
+
     if (!property) {
       return next(new AppError(`Property not found`, 404));
     }
     res.status(200).json({
       property,
+      propertyImages,
     });
   }
 );
@@ -88,34 +130,9 @@ const createProperty: RequestHandler = catchAsyncErrors(
   }
 );
 
-
-
-const updateProperty: RequestHandler = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // spread request object into new
-    const body = {... req.body}
-    // check for image and add to body
-    if(req.file) body.image = req.file.filename;
-    //const result = await cloudinary.uploader.upload(req.file.path);
-    // @ts-ignore
-    cloudinary.uploader.upload(`${req.file.path}`, function(error, result) {console.log(result, error)});
-    console.log(req.file)
-    const id = (req.params as { id: string }).id;
-    const property = await Property.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!property) {
-      return next(new AppError('No content found', 404));
-    }
-
-    res.status(200).json({
-      status: 'ok',
-      data: property,
-    });
-  }
-);
+interface ExpressRequestHandler extends Request {
+  files: [];
+}
 
 const deleteProperty = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -141,5 +158,7 @@ export {
   createProperty,
   updateProperty,
   deleteProperty,
-  //uploadImage,
+  uploadPropertyImages,
+  resizePropertyImages,
+  uploadImagesToCloud,
 };
