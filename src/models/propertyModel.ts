@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 interface PropertyInterface {
   title: { title: string; unique: boolean };
+  tag: { tag: string; unique: boolean };
   description: string;
   ownership: string;
   plotSize: string;
@@ -10,10 +11,8 @@ interface PropertyInterface {
   bathrooms: number;
   price: number;
   location: string;
-  map: string;
-  images: [string];
+  cords: string;
   floorPlan: [string];
-  cloudinary_id: string;
 }
 
 const propertySchema = new mongoose.Schema<PropertyInterface>({
@@ -21,6 +20,11 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
     unique: [true, 'Property names must be unique please chose another name'],
     type: String,
     required: [true, 'A property must have a title'],
+  },
+  tag: {
+    unique: [true, 'Tags be unique please chose another name'],
+    type: String,
+    required: [true, 'A property must have a tag'],
   },
   description: {
     type: String,
@@ -53,12 +57,9 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
   location: {
     type: String,
   },
-  /*google geo data? */
-  map: String,
+  /*google geo data */
+  cords: [],
 
-  images: [String],
-
-  cloudinary_id: String,
 
   floorPlan: [String],
 });

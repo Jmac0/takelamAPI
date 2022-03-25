@@ -11,6 +11,7 @@ import { Error } from 'mongoose';
 // multer method to upload multiple images puts files on req.body.files
 const uploadPropertyImages = upload.array('images', 20);
 // resize property images for gallery
+/*
 const resizePropertyImages: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     // check if file is on request object
@@ -21,16 +22,15 @@ const resizePropertyImages: RequestHandler = catchAsyncErrors(
       // @ts-ignore
       req.files.map(async (image, i) => {
         // @ts-ignore
-        await sharp(req!.files[i].path).resize(200, 200);
-
-        req.body.images.push({ path: image.path, name: image.originalname });
+        await sharp(req!.files[i].path).resize(200, 200);req.body.images.push({ path: image.path, original: image.originalname });
       })
     );
-    console.log(req.body.images);
+    console.log(req.files);
 
     next();
   }
 );
+*/
 // uploads multiple images to cloudinary server
 const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -38,24 +38,27 @@ const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
     if(!property) return new AppError('No property found', 404)
+    if(req.files) {
 
-    // new property on req object for cloudinary responses
-    req.body.cloudImages = [];
-    // map over images array and await promises
-    await Promise.all(
-      req.body.images.map(async (image: { name: string; path: string }) => {
+
+      await Promise.all(
+        // new property on req object for cloudinary responses
+        // map over images array and await promises
         // @ts-ignore
-        await cloudinary.v2.uploader
-          .upload(image.path, {
-            public_id: `${property.title}/${image.name}`,
-            tags: [`${property.title}`],
-          })
-          .then((res: string[]) => {
-            req.body.cloudImages.push(res);
-          });
-      })
-    );
+        req!.files!.map(async (image: { originalname: string, path: string; }) => {
+          // @ts-ignore
+          await cloudinary.uploader
+            .upload(image.path, {
+              // remove file extension
+              public_id: `${image.originalname.replace(/\.[^/.]+$/, "")}`,
+              folder: `${property.tag}`,
+              tags: [`${property.tag}`],
+              use_filenames: true
+            });
+        })
+      );
 
+    }
     next();
   }
 );
@@ -63,8 +66,12 @@ const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
 const updateProperty: RequestHandler = catchAsyncErrors(
   async (req: ExpressRequestHandler, res: Response, next: NextFunction) => {
     // spread request object into new
-    const body = { ...req.body };
     const id = (req.params as { id: string }).id;
+
+      const cords = req.body.cords.split(',').map((el: string) => Number(el));
+      const body = {...req.body, cords}
+
+
     const property = await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
@@ -83,14 +90,14 @@ const updateProperty: RequestHandler = catchAsyncErrors(
 
 const getAllProperties: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
-    const property = await Property.find();
-    if (property.length === 0) {
+    const properties = await Property.find();
+    if (properties.length === 0) {
       return next(
         new AppError('Nothing found in database: contact developer', 404)
       );
     }
     res.status(200).json({
-      property,
+      properties,
     });
   }
 );
@@ -99,29 +106,20 @@ const getProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
-    let propertyImages: string[] = [];
-    await cloudinary.v2.api.resources(
-      {
-        type: 'upload',
-        prefix: `${property!.title}`, // add your folder
-      },
-      function (error: Error, result: any) {
-        propertyImages.push(result);
-      }
-    );
 
     if (!property) {
       return next(new AppError(`Property not found`, 404));
     }
     res.status(200).json({
       property,
-      propertyImages,
     });
   }
 );
 const createProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response) => {
-    const newProperty = await Property.create(req.body);
+    const cords = req.body.cords.split(',').map((el: string) => Number(el));
+    const body = {...req.body, cords}
+    const newProperty = await Property.create(body);
 
     res.status(201).json({
       status: 'Ok',
@@ -159,6 +157,6 @@ export {
   updateProperty,
   deleteProperty,
   uploadPropertyImages,
-  resizePropertyImages,
+  //resizePropertyImages,
   uploadImagesToCloud,
 };

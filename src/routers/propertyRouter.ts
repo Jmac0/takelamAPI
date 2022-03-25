@@ -7,7 +7,7 @@ import {
   updateProperty,
   deleteProperty,
   uploadPropertyImages,
-  resizePropertyImages,
+ // resizePropertyImages,
   uploadImagesToCloud,
 } from '../controllers/propertyController';
 const router = Router();
@@ -18,7 +18,7 @@ router
   .get(getProperty)
   .patch(
     uploadPropertyImages,
-    resizePropertyImages,
+//    resizePropertyImages,
     uploadImagesToCloud,
     updateProperty)
 
