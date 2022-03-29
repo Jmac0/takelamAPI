@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import { Request, Response, NextFunction } from 'express';
 const sharp = require('sharp');
+const  CryptoJS = require("crypto-js");
 const cloudinary = require('../utils/cloudinary');
 // multer instance and config file
 const upload = require('../utils/multer');
@@ -37,27 +38,25 @@ const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
     // get property name for cloudinary folder
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
-    if(!property) return new AppError('No property found', 404)
-    if(req.files) {
-
-
+    if (!property) return new AppError('No property found', 404);
+    if (req.files as []) {
       await Promise.all(
         // new property on req object for cloudinary responses
         // map over images array and await promises
         // @ts-ignore
-        req!.files!.map(async (image: { originalname: string, path: string; }) => {
-          // @ts-ignore
-          await cloudinary.uploader
-            .upload(image.path, {
+        req!.files!.map(
+          async (image: { originalname: string; path: string }) => {
+            // @ts-ignore
+            await cloudinary.uploader.upload(image.path, {
               // remove file extension
-              public_id: `${image.originalname.replace(/\.[^/.]+$/, "")}`,
+              public_id: `${image.originalname.replace(/\.[^/.]+$/, '')}`,
               folder: `${property.tag}`,
               tags: [`${property.tag}`],
-              use_filenames: true
+              use_filenames: true,
             });
-        })
+          }
+        )
       );
-
     }
     next();
   }
@@ -67,10 +66,9 @@ const updateProperty: RequestHandler = catchAsyncErrors(
   async (req: ExpressRequestHandler, res: Response, next: NextFunction) => {
     // spread request object into new
     const id = (req.params as { id: string }).id;
-
-      const cords = req.body.cords.split(',').map((el: string) => Number(el));
-      const body = {...req.body, cords}
-
+    // convert coords string to an array of numbers and add to body
+    const cords = req.body.cords.split(',').map((el: string) => Number(el));
+    const body = { ...req.body, cords };
 
     const property = await Property.findByIdAndUpdate(id, body, {
       new: true,
@@ -117,8 +115,9 @@ const getProperty: RequestHandler = catchAsyncErrors(
 );
 const createProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response) => {
+    // convert coords string to an array of numbers and add to body
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
-    const body = {...req.body, cords}
+    const body = { ...req.body, cords };
     const newProperty = await Property.create(body);
 
     res.status(201).json({
@@ -138,9 +137,8 @@ const deleteProperty = catchAsyncErrors(
     const property = await Property.findByIdAndDelete(id);
 
     if (!property) {
-      // return early and call next with a argument = go to error handler
-
-      // return early and call next with a argument = go to error handler
+      /*todo delete images from cloud*/
+      // return early and call next with an argument = go to error handler
       return next(new AppError(`Property: ${id} not found `, 404));
     }
     res.status(204).json({
@@ -149,6 +147,7 @@ const deleteProperty = catchAsyncErrors(
     });
   }
 );
+
 
 export {
   getAllProperties,

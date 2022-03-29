@@ -20,8 +20,11 @@
   "homepage": "https://github.com/Jmac0/takelamAPI#readme",
   "dependencies": {
     "@types/morgan": "^1.9.3",
+    "bcrypt": "^5.0.1",
     "cloudinary": "^1.28.1",
     "cors": "^2.8.5",
+    "crypto-js": "^4.1.1",
+    "date-fns": "^2.28.0",
     "dotenv": "^14.3.2",
     "express": "^4.17.2",
     "mongoose": "^6.1.8",

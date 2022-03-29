@@ -21,7 +21,6 @@ router
 //    resizePropertyImages,
     uploadImagesToCloud,
     updateProperty)
-
   .delete(deleteProperty);
 
 export default router;
