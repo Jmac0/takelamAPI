@@ -11,7 +11,7 @@ interface PropertyInterface {
   bathrooms: number;
   price: number;
   location: string;
-  cords: string;
+  cords: {cords: string[]; required: true }
   floorPlan: [string];
 }
 
@@ -58,9 +58,10 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
     type: String,
   },
   /*google geo data */
-  cords: [],
-
-
+  cords: {
+    type: [],
+    required: [true, 'Please add some coordinates to render map'],
+  },
   floorPlan: [String],
 });
 

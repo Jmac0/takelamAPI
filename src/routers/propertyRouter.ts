@@ -8,11 +8,14 @@ import {
   deleteProperty,
   uploadPropertyImages,
  // resizePropertyImages,
+  getPropertyClient,
   uploadImagesToCloud,
 } from '../controllers/propertyController';
 const router = Router();
 
 router.route('/').get(getAllProperties).post(createProperty);
+router.route('/client/:id').get(getPropertyClient);
+
 router
   .route('/:id')
   .get(getProperty)

@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/Jmac0/takelamAPI#readme",
   "dependencies": {
+    "@types/jsonwebtoken": "^8.5.8",
     "@types/morgan": "^1.9.3",
+    "@types/validator": "^13.7.2",
     "bcrypt": "^5.0.1",
     "cloudinary": "^1.28.1",
     "cors": "^2.8.5",
@@ -27,11 +29,14 @@
     "date-fns": "^2.28.0",
     "dotenv": "^14.3.2",
     "express": "^4.17.2",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.1.8",
+    "mongoose-unique-validator": "^3.0.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.1",
     "sharp": "^0.30.2",
-    "typescript": "^4.6.2"
+    "typescript": "^4.6.2",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",
