@@ -9,6 +9,8 @@ interface UserInterface extends Document {
   passwordConfirm: string;
   validator: () => boolean;
   correctPassword: (password: string, candidatePassword: string) => boolean;
+  passwordChangedAt: Date;
+  passwordChangedAfter: (JWTTimestamp: number) => boolean;
 }
 
 const userSchema = new mongoose.Schema<UserInterface>({
@@ -43,7 +45,9 @@ const userSchema = new mongoose.Schema<UserInterface>({
       message: 'Passwords do not match',
     },
   },
+  passwordChangedAt: Date,
 });
+
 
 userSchema.pre('save', async function (next) {
   // check if the password is different form the stored password
@@ -67,6 +71,23 @@ userSchema.methods.correctPassword = async function (
 userSchema.plugin(uniqueValidator, {
   message: 'The email: {VALUE} is already in use',
 });
-const User = mongoose.model<UserInterface>('User', userSchema);
 
+
+userSchema.methods.passwordChangedAfter = async function (
+  JWTTimestamp: number
+) {
+  if (this.passwordChangedAt as Date) {
+    const changedTimestamp: number = parseInt(
+      // change time format with / 1000 and .getTime
+      String(this.passwordChangedAt.getTime() / 1000),
+      10
+    );
+    return JWTTimestamp < changedTimestamp;
+  }
+  // Default,  false means password has not been changed //
+
+  return false;
+};
+
+const User = mongoose.model<UserInterface>('User', userSchema);
 export default User;

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { NextFunction } from "express";
 import cors from 'cors';
 import morgan from 'morgan';
 import contentRouter from './routers/contentRouter';
@@ -23,6 +23,12 @@ app.use(
     limit: '10kb',
   })
 );
+
+// @ts-ignore
+app.use((req: Request, res: Response, next: NextFunction) => {
+ console.log(req.headers);
+ next();
+})
 
 app.use('/api/v1/content', contentRouter);
 app.use('/api/v1/properties', propertyRouter);

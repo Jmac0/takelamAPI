@@ -36,6 +36,15 @@ const handleValidationErrorDB = (err: Error) => {
     .join('. ');
   return new AppError(messages, 400);
 };
+
+// error for malformed/tampered token
+const handleJWTError = () => {
+ return  new AppError('Invalid token please login again', 401);
+}
+const handleJWTExpiredError = () => {
+
+  return new AppError('Token expiered please log in again', 401)
+}
 /// extracted responses into functions for neatness
 const sendErrorDev = (err: Error, res: Response) => {
   res.status(err.statusCode as number).json({
@@ -44,7 +53,6 @@ const sendErrorDev = (err: Error, res: Response) => {
     stack: err.stack,
   });
 };
-
 const sendErrorProd = (err: AppError, res: Response) => {
   // check if error comes from our appError class and is an expected error
   if (err.isOperational) {
@@ -85,8 +93,12 @@ export default (
     // handle duplicate field entry errors
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     // handle validation errors
-    if (error.name === 'ValidationError')
-      error = handleValidationErrorDB(error);
+    if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
+
+    if (error.name === 'JsonWebTokenError') error = handleJWTError();
+    // send production error
+
+    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
     // send production error
     sendErrorProd(error, res);
   }

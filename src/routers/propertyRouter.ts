@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import {protect} from '../controllers/authController';
 
 import {
   getAllProperties,
@@ -13,7 +14,7 @@ import {
 } from '../controllers/propertyController';
 const router = Router();
 
-router.route('/').get(getAllProperties).post(createProperty);
+router.route('/').get(protect, getAllProperties).post(createProperty);
 router.route('/client/:id').get(getPropertyClient);
 
 router
