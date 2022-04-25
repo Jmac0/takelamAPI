@@ -21,7 +21,6 @@ const userSchema = new mongoose.Schema<UserInterface>({
   email: {
     type: String,
     required: [true, 'Please enter an email address'],
-    unique: true,
     lowercase: true,
     validate: [validator.isEmail, 'Please enter a valid email address'],
   },
@@ -67,10 +66,15 @@ userSchema.methods.correctPassword = async function (
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
+
+
+
 // custom validator for unique email value
+/*
 userSchema.plugin(uniqueValidator, {
   message: 'The email: {VALUE} is already in use',
 });
+*/
 
 
 userSchema.methods.passwordChangedAfter = async function (

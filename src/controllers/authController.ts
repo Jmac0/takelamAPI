@@ -1,3 +1,4 @@
+import { Schema } from 'mongoose';
 const { promisify } = require('util');
 import { NextFunction, Request, Response } from 'express';
 import { addDays, endOfDay } from 'date-fns';
@@ -7,10 +8,50 @@ import User from '../models/userModel';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
 import baseUrl from '../utils/baseURL';
+import { ObjectId } from 'mongodb';
+interface User {
+  _id: ObjectId;
+  password: string | undefined;
+}
 
-const signToken = (id: string) => {
+interface UserRequest extends Request {
+  user: User;
+}
+const cookieExpires = process.env.JWT_COOKIE_EXPIRES;
+
+const signToken = (id: ObjectId) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES,
+  });
+};
+
+// set options for cookies
+const cookieOptions = {
+  expires: new Date(Date.now() + Number(cookieExpires) * 24 * 60 * 60 * 1000),
+  secure: true,
+  SameSite: 'None',
+
+  /*
+  secure: process.env.NODE_ENV === 'production',
+*/
+  httpOnly: true,
+};
+
+// create and send JWT
+const createAndSendToken = (user: User, statusCode: number, res: Response) => {
+  user.password = undefined;
+  const token = signToken(user._id as ObjectId);
+  // create cookie
+  // response
+  //res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+
+  // @ts-ignore
+  res.cookie('_taklam', token, cookieOptions);
+  //  res.setHeader("set-cookie", [cookie]);
+  return res.status(statusCode).json({
+    status: 'success',
+    token,
+    user,
   });
 };
 
@@ -21,23 +62,19 @@ const createAdmin = catchAsyncErrors(
       email: req.body.email,
       password: req.body.password,
       passwordConfirm: req.body.passwordConfirm,
-      passwordChangedAt: req.body.passwordChangedAt
+      passwordChangedAt: req.body.passwordChangedAt,
     });
 
-    const token = signToken(newAdmin._id as unknown as string);
-
-    res.status(200).json({
-      status: 'success',
-      token,
-      newAdmin,
-    });
+    createAndSendToken(newAdmin, 201, res);
   }
 );
 
 const loginAdmin = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: UserRequest, res: Response, next: NextFunction) => {
+    //  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
     const email = (req.body as { email: string }).email;
     const password = (req.body as { password: string }).password;
+
     // check for email and password
     if (!email || !password) {
       return next(new AppError('Email & password required', 400));
@@ -50,11 +87,7 @@ const loginAdmin = catchAsyncErrors(
     const correctPw = await user.correctPassword(password, user.password);
     if (!correctPw)
       return next(new AppError('Username or password incorrect', 404));
-
-    const token = signToken(user._id as unknown as string);
-    res.status(200).json({
-      token,
-    });
+    createAndSendToken(user, 200, res);
   }
 );
 
@@ -90,7 +123,7 @@ const createSecureLink = catchAsyncErrors(
 );
 
 const protect = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: UserRequest, res: Response, next: NextFunction) => {
     // get token from headers
     let token;
     const authorization = (req.headers as { authorization: string })
@@ -107,20 +140,46 @@ const protect = catchAsyncErrors(
         )
       );
     // validate token promisify is from Node utils
-    const decoded = await promisify(jwt.verify)(
-      token, process.env.JWT_SECRET
-    );
-    console.log(decoded);
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
     // check if user exists
     const currentUser = await User.findById(decoded.id);
 
-    if (!currentUser) return next(new AppError('User with this token not found', 401));
+    if (!currentUser)
+      return next(new AppError('User with this token not found!', 401));
+
     // check if user changed passwords, compare date in db with decoded JWT iat
-   const tokenActive = await currentUser.passwordChangedAfter(decoded.iat)
-console.log(tokenActive);
+    const tokenActive = await currentUser.passwordChangedAfter(decoded.iat);
+    if (tokenActive)
+      return next(new AppError('User recently changed passwords', 401));
+    req.user = currentUser;
     next();
   }
 );
+const updateUser = catchAsyncErrors(
+  async (req: UserRequest, res: Response, next: NextFunction) => {
+    const password = (req.body as { password: string }).password;
 
-export { protect, createSecureLink, createAdmin, loginAdmin };
+    const user = await User.findOne(req.user._id).select('+password');
+    if (!user) return next(new AppError('User not found', 401));
+
+    const correctPw = await user!.correctPassword(
+      req.body.passwordCurrent,
+      user!.password
+    );
+
+    if (!correctPw) {
+      return next(new AppError('password incorrect', 401));
+    }
+
+    if (req.body.password) user!.password = req.body.password;
+    user!.passwordConfirm = req.body.passwordConfirm;
+
+    if (req.body.email) user!.email = req.body.email;
+
+    await user!.save();
+
+    createAndSendToken(user, 200, res);
+  }
+);
+export { protect, createSecureLink, createAdmin, loginAdmin, updateUser };

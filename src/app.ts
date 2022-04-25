@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { NextFunction } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import cors from 'cors';
 import morgan from 'morgan';
 import contentRouter from './routers/contentRouter';
@@ -15,9 +15,13 @@ const app = express();
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
-
+const coresOptions = {
+  origin: true, //included origin as true
+  credentials: true, //included credentials as true
+  "Access-Control-Allow-Credentials": "true"
+}
 //Set Cross origin policy
-app.use(cors());
+app.use(cors(coresOptions));
 app.use(
   express.json({
     limit: '10kb',
@@ -25,10 +29,14 @@ app.use(
 );
 
 // @ts-ignore
-app.use((req: Request, res: Response, next: NextFunction) => {
- console.log(req.headers);
- next();
+/*
+app.get('/',(req: Request, res: Response, next: NextFunction) => {
+
+  res.send('Hello')
+
+  next();
 })
+*/
 
 app.use('/api/v1/content', contentRouter);
 app.use('/api/v1/properties', propertyRouter);

@@ -1,5 +1,11 @@
+
 import 'dotenv/config';
+import { createServer } from 'http';
 import mongoose from 'mongoose';
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 import app from './app';
 
 const DB = process.env.DB!.replace(
@@ -23,8 +29,14 @@ process.on('uncaughtException', (err) => {
     console.log(err);
   }
 })();
+
+const httpsServer = https.createServer({
+  key: fs.readFileSync(path.join(__dirname, '../cert', 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, '../cert', 'cert.pem')),
+},app);
+
 // connect to server
-const server = app.listen(port, () => {
+const server = httpsServer.listen(port, () => {
   if (process.env.NODE_ENV === 'dev') {
     console.log('Development Server Started');
   } else {
