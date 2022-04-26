@@ -1,7 +1,10 @@
+import { add } from 'date-fns';
 import mongoose from 'mongoose';
+const crypto = require('crypto');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const uniqueValidator = require('mongoose-unique-validator');
+
 interface UserInterface extends Document {
   name: string;
   email: { tag: string; unique: boolean };
@@ -11,6 +14,9 @@ interface UserInterface extends Document {
   correctPassword: (password: string, candidatePassword: string) => boolean;
   passwordChangedAt: Date;
   passwordChangedAfter: (JWTTimestamp: number) => boolean;
+  passwordResetToken: string | undefined;
+  passwordResetExpires: Date | undefined;
+  createResetToken: () => string;
 }
 
 const userSchema = new mongoose.Schema<UserInterface>({
@@ -45,8 +51,10 @@ const userSchema = new mongoose.Schema<UserInterface>({
     },
   },
   passwordChangedAt: Date,
-});
+  passwordResetToken: String,
 
+  passwordResetExpires: Date,
+});
 
 userSchema.pre('save', async function (next) {
   // check if the password is different form the stored password
@@ -59,6 +67,30 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+
+userSchema.pre('save', async function (next) {
+  // check if the password is different form the stored password
+  if (!this.isModified('password') || this.isNew) return next();
+  // Add time to db + 2 second to allow for latency in saving so the JWT is not created  in the past
+  this.passwordChangedAt = add(new Date(), {
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: -2,
+  })
+
+  next();
+});
+
+
+
+
+
+
+
 // instance method, compare hashed passwords
 userSchema.methods.correctPassword = async function (
   candidatePassword: string,
@@ -67,15 +99,12 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-
-
 // custom validator for unique email value
 /*
 userSchema.plugin(uniqueValidator, {
   message: 'The email: {VALUE} is already in use',
 });
 */
-
 
 userSchema.methods.passwordChangedAfter = async function (
   JWTTimestamp: number
@@ -91,6 +120,26 @@ userSchema.methods.passwordChangedAfter = async function (
   // Default,  false means password has not been changed //
 
   return false;
+};
+
+userSchema.methods.createResetToken = async function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+// set token in db
+ this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+ // set expires time in db
+  this.passwordResetExpires = add(new Date(), {
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: 0,
+    hours: 1,
+    minutes: 10,
+    seconds: 0,
+  })
+
+  console.log({resetToken}, this.passwordResetToken)
+
+ return resetToken;
 };
 
 const User = mongoose.model<UserInterface>('User', userSchema);

@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose';
+const crypto = require('crypto');
 const { promisify } = require('util');
 import { NextFunction, Request, Response } from 'express';
 import { addDays, endOfDay } from 'date-fns';
@@ -9,8 +9,11 @@ import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
 import baseUrl from '../utils/baseURL';
 import { ObjectId } from 'mongodb';
+import sendEmail from '../utils/email';
+
 interface User {
   _id: ObjectId;
+  passwordResetExpires: Date | undefined;
   password: string | undefined;
 }
 
@@ -182,4 +185,75 @@ const updateUser = catchAsyncErrors(
     createAndSendToken(user, 200, res);
   }
 );
-export { protect, createSecureLink, createAdmin, loginAdmin, updateUser };
+
+const forgotPassword = catchAsyncErrors(
+  async (req: UserRequest, res: Response, next: NextFunction) => {
+    // get user based on email
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return next(new AppError('No user found', 404));
+    // generate random token
+    const resetToken = await user.createResetToken();
+    // stops express asking for password
+    await user.save({ validateBeforeSave: false });
+
+    const resetLink = `${baseUrl}/users/resetpassword/${resetToken}`;
+
+    try {
+      // send token to user using node mailer
+      await sendEmail({
+        email: req.body.email,
+        subject: 'Reset password, link (valid for 10 minutes)',
+        text: `reset password here ${resetLink}`,
+      });
+    } catch (e) {
+      // if error delete token in db and expires time
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      // turn off validators and throw error
+      await user.save({ validateBeforeSave: false });
+      return next(
+        new AppError(
+          'There was a problem sending the email, please try again later.',
+          500
+        )
+      );
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Reset token sent to email',
+    });
+  }
+);
+
+const restPassword = catchAsyncErrors(
+  async (req: UserRequest, res: Response, next: NextFunction) => {
+    // get user based on token
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+    // find user and check if token has expired, will not return a user if token is expired
+    const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } });
+    if (!user) return next(new AppError('Token is invalid or has expired', 400));
+    // update password changed at property in db
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+// delete fields
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+// save will run middleware
+    await user.save();
+    // log user in with jwt
+    createAndSendToken(user, 200, res)
+  });
+
+export {
+  protect,
+  createSecureLink,
+  createAdmin,
+  loginAdmin,
+  updateUser,
+  forgotPassword,
+  restPassword,
+};
