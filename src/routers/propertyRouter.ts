@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import {protect} from '../controllers/authController';
+import { protect } from '../controllers/authController';
 
 import {
   getAllProperties,
@@ -8,7 +8,8 @@ import {
   updateProperty,
   deleteProperty,
   uploadPropertyImages,
- // resizePropertyImages,
+  uploadFloorPlan,
+  // resizePropertyImages,
   getPropertyClient,
   uploadImagesToCloud,
 } from '../controllers/propertyController';
@@ -22,9 +23,11 @@ router
   .get(getProperty)
   .patch(
     uploadPropertyImages,
-//    resizePropertyImages,
+    uploadFloorPlan,
+    //resizePropertyImages,
     uploadImagesToCloud,
-    updateProperty)
+    updateProperty
+  )
   .delete(deleteProperty);
 
 export default router;

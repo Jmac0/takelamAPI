@@ -80,16 +80,16 @@ const loginAdmin = catchAsyncErrors(
 
     // check for email and password
     if (!email || !password) {
-      return next(new AppError('Email & password required', 400));
+      return next(new AppError('Email & password required!', 400));
     }
     // find user and add password to the selected data from db
     const user = await User.findOne({ email }).select('+password');
     // check user exists also Type-checks user is not undefined
-    if (!user) return next(new AppError('Username or password incorrect', 404));
+    if (!user) return next(new AppError('Username or password incorrect!', 401));
     // check password is correct, method in userModel
     const correctPw = await user.correctPassword(password, user.password);
     if (!correctPw)
-      return next(new AppError('Username or password incorrect', 404));
+      return next(new AppError('Username or password incorrect!', 401));
     createAndSendToken(user, 200, res);
   }
 );

@@ -1,19 +1,6 @@
 import mongoose from 'mongoose';
+import { PropertyInterface  } from '../interfaces/interfaces';
 
-interface PropertyInterface {
-  title: { title: string; unique: boolean };
-  tag: { tag: string; unique: boolean };
-  description: string;
-  ownership: string;
-  plotSize: string;
-  buildSize: number;
-  bedrooms: number;
-  bathrooms: number;
-  price: number;
-  location: string;
-  cords: {cords: string[]; required: true }
-  floorPlan: [string];
-}
 
 const propertySchema = new mongoose.Schema<PropertyInterface>({
   title: {

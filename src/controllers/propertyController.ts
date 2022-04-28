@@ -1,16 +1,86 @@
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import {
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+} from 'express';
 import Property from '../models/propertyModel';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
 import { isFuture } from 'date-fns';
-
-const sharp = require('sharp');
+import { PropertyInterface } from '../interfaces/interfaces';
+//const sharp = require('sharp');
 const CryptoJS = require('crypto-js');
 const cloudinary = require('../utils/cloudinary');
 // multer instance and config file
 const upload = require('../utils/multer');
 // multer method to upload multiple images puts files on req.body.files
 const uploadPropertyImages = upload.array('images', 20);
+
+interface ImageRequest extends Request {
+  property: PropertyInterface;
+  floorplanFiles: {}[];
+  floorPlan: string[];
+  propertyImages: {}[];
+  _id: string
+}
+interface ImageFile {
+  originalname: string;
+  path: string;
+}
+
+const uploadFloorPlan: RequestHandler = catchAsyncErrors(
+  async (req: ImageRequest, res: Response, next: NextFunction) => {
+    const id = (req.params as { id: string }).id;
+    const property = await Property.findById(id);
+    if (!property) return new AppError('No property found', 404);
+    req.property = property;
+    // check for files on request
+    if (!req.files) return next();
+    // create separate arrays for floor plans and images
+    req.floorplanFiles = [];
+    req.propertyImages = [];
+    // array of urls to images on cloud
+    req.floorPlan = []
+    // check the image name for floor plan
+    const regex = /^floorplan/i;
+    // map req array and separate images and floor plans
+    // @ts-ignore
+    req.files.forEach((image: ImageFile) => {
+      if (regex.test(image.originalname)) {
+        req.floorplanFiles.push(image);
+      } else {
+      req.propertyImages.push(image);
+      }
+
+
+    });
+// upload floor plans to sub folder on cloud
+    if (req.floorplanFiles.length > 0) {
+      await Promise.all(
+        // new property on req object for cloudinary responses
+        // map over images array and await promises
+        req!.floorplanFiles!.map(
+          // @ts-ignore
+          async (image: ImageFile) => {
+            // @ts-ignore
+            await cloudinary.uploader
+              .upload(image.path, {
+                // remove file extension
+                public_id: `${image.originalname.replace(/\.[^/.]+$/, '')}`,
+                folder: `${property.tag}/floorplan`,
+                use_filenames: true,
+              }).then((res: any) =>{req.floorPlan.push(res.secure_url)})
+          }
+        )
+      )
+    }
+
+    console.log(req.floorPlan)
+    next();
+  }
+);
+
 // resize property images for gallery
 /*
 const resizePropertyImages: RequestHandler = catchAsyncErrors(
@@ -33,15 +103,41 @@ const resizePropertyImages: RequestHandler = catchAsyncErrors(
 );
 */
 
+// uploads multiple images to cloudinary server
+const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
+  async (req: ImageRequest, res: Response, next: NextFunction) => {
+    // @ts-ignore
+    if (req.propertyImages.length > 0) {
+      await Promise.all(
+        // new property on req object for cloudinary responses
+        // map over images array and await promises
+        // @ts-ignore
+        req!.propertyImages!.map(async (image: ImageFile) => {
+          // @ts-ignore
+          await cloudinary.uploader.upload(image.path, {
+            // remove file extension
+            public_id: `${image.originalname.replace(/\.[^/.]+$/, '')}`,
+            folder: `${req.property.tag}`,
+            tags: [`${req.property.tag}`],
+            use_filenames: true,
+          });
+        })
+      );
+    }
+    next();
+  }
+);
+
 const updateProperty: RequestHandler = catchAsyncErrors(
-  async (req: ExpressRequestHandler, res: Response, next: NextFunction) => {
+  async (req: ImageRequest, res: Response, next: NextFunction) => {
     // spread request object into new
-    const id = (req.params as { id: string }).id;
+    const id = req.property._id
     // convert coords string to an array of numbers and add to body
     if (!req.body.cords)
       return next(new AppError('Please enter coordinates to create map', 400));
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
-    const body = { ...req.body, cords };
+    const body = { ...req.body,  cords };
+    if (req.floorPlan.length > 0) body.floorPlan = req.floorPlan
 
     const property = await Property.findByIdAndUpdate(id, body, {
       new: true,
@@ -49,7 +145,7 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     });
 
     if (!property) {
-      return next(new AppError('No content found', 404));
+      return next(new AppError('No property found', 404));
     }
 
     res.status(204).json({
@@ -57,36 +153,6 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     });
   }
 );
-// uploads multiple images to cloudinary server
-const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // get property name for cloudinary folder
-    const id = (req.params as { id: string }).id;
-    const property = await Property.findById(id);
-    if (!property) return new AppError('No property found', 404);
-    if (req.files as []) {
-      await Promise.all(
-        // new property on req object for cloudinary responses
-        // map over images array and await promises
-        // @ts-ignore
-        req!.files!.map(
-          async (image: { originalname: string; path: string }) => {
-            // @ts-ignore
-            await cloudinary.uploader.upload(image.path, {
-              // remove file extension
-              public_id: `${image.originalname.replace(/\.[^/.]+$/, '')}`,
-              folder: `${property.tag}`,
-              tags: [`${property.tag}`],
-              use_filenames: true,
-            });
-          }
-        )
-      );
-    }
-    next();
-  }
-);
-
 const getAllProperties: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const properties = await Property.find();
@@ -128,9 +194,6 @@ const createProperty: RequestHandler = catchAsyncErrors(
   }
 );
 
-interface ExpressRequestHandler extends Request {
-  files: [];
-}
 
 const deleteProperty = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -191,6 +254,7 @@ export {
   createProperty,
   updateProperty,
   deleteProperty,
+  uploadFloorPlan,
   uploadPropertyImages,
   //resizePropertyImages,
   uploadImagesToCloud,
