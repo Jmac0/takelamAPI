@@ -129,10 +129,12 @@ const protect = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     // get token from headers
     let token;
-    const authorization = (req.headers as { authorization: string })
+    const authorization = (req.cookies as { authorization: string })
       .authorization;
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
+    }else if (req.cookies._taklam){
+      token = req.cookies._taklam
     }
     // check if token exists
     if (!token)
@@ -159,6 +161,9 @@ const protect = catchAsyncErrors(
     next();
   }
 );
+
+
+
 const updateUser = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     const password = (req.body as { password: string }).password;

@@ -1,10 +1,15 @@
 import 'dotenv/config';
-import express, { NextFunction, Request, Response } from "express";
+const helmet = require('helmet');
+const hpp = require('hpp');
+import express, { NextFunction, Request, Response } from 'express';
+const rateLimit = require('express-rate-limit');
 import cors from 'cors';
 import morgan from 'morgan';
+const cookieParser = require('cookie-parser');
+const mongoSanitizer = require('express-mongo-sanitize');
 import contentRouter from './routers/contentRouter';
 import propertyRouter from './routers/propertyRouter';
-import authRouter from "./routers/authRouter";
+import authRouter from './routers/authRouter';
 import linkRouter from './routers/authRouter';
 // import clientRouter from './routers/clientRouter';
 import AppError from './utils/appError';
@@ -15,11 +20,12 @@ const app = express();
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
+app.use(helmet());
 const coresOptions = {
   origin: true, //included origin as true
   credentials: true, //included credentials as true
-  "Access-Control-Allow-Credentials": "true"
-}
+  'Access-Control-Allow-Credentials': 'true',
+};
 //Set Cross origin policy
 app.use(cors(coresOptions));
 app.use(
@@ -27,16 +33,29 @@ app.use(
     limit: '10kb',
   })
 );
+app.use(cookieParser());
 
-// @ts-ignore
-/*
-app.get('/',(req: Request, res: Response, next: NextFunction) => {
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 10 minutes)
+  message: 'Too many requests from this IP. Please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
-  res.send('Hello')
+// Apply the rate limiting middleware to all requests
+app.use(limiter);
+app.use(mongoSanitizer());
+app.use(hpp());
+
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+
+  console.log(req.cookies)
 
   next();
 })
-*/
+
 
 app.use('/api/v1/content', contentRouter);
 app.use('/api/v1/properties', propertyRouter);

@@ -233,7 +233,8 @@ const getPropertyClient: RequestHandler = catchAsyncErrors(
     const active = isFuture(date);
     // send link expired message if over seven days old
     if (!active) {
-      res.status(400).json({
+
+     return  res.status(400).json({
         response: 'Link expired please contact us for help',
       });
     }
