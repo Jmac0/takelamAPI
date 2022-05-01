@@ -14,8 +14,8 @@ let transport;
       host: 'smtp.sendgrid.net',
       port: '465',
       auth: {
-        user: 'apikey',
-        pass: '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',
+        user: process.env.SENDGRID_USER,
+        pass: process.env.SENDGRID_PASS,
       },
     });
   } else {

@@ -1,9 +1,5 @@
 import * as dotenv from 'dotenv';
 import mongoose from 'mongoose';
-//const http = require('http');
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
 import app from './app';
 dotenv.config();
 
@@ -30,22 +26,14 @@ process.on('uncaughtException', (err) => {
   }
 })();
 
-const httpsServer = https.createServer(
-  {
-    key: fs.readFileSync(path.join(__dirname, '../cert', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '../cert', 'cert.pem')),
-  },
-  app
-);
-
-// connect to server
-const server = httpsServer.listen(port, () => {
+const server = app.listen(port, () => {
   if (process.env.NODE_ENV === 'dev') {
     console.log('Development Server Started');
   } else {
     console.log('Production Server Started');
   }
 });
+
 
 process.on('unhandledRejection', (err: { name: string; message: string }) => {
   console.log(err.name, err.message);
