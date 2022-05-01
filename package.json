@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon dist/server.js",
-    "start": "node dist/server.js",
+    "postinstall": "tsc",
+    "start": " node dist/server.js",
     "start:prod": "NODE_ENV=production nodemon dist/server.js",
     "debug": "ndb dist/server.js"
   },
