@@ -16,6 +16,7 @@ import AppError from './utils/appError';
 import globalErrorHandler from './controllers/errorController';
 require('dotenv').config();
 const app = express();
+app.enable('trust proxy')
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
