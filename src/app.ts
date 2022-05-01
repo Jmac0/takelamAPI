@@ -27,6 +27,7 @@ const coresOptions = {
   credentials: true, //included credentials as true
   'Access-Control-Allow-Credentials': 'true',
 };
+
 //Set Cross origin policy
 app.use(cors(coresOptions));
 app.use(
@@ -34,6 +35,8 @@ app.use(
     limit: '10kb',
   })
 );
+// @ts-ignore
+app.options('*', cors())
 app.use(cookieParser());
 
 const limiter = rateLimit({
