@@ -1,18 +1,18 @@
-
-import 'dotenv/config';
-import { createServer } from 'http';
+import * as dotenv from 'dotenv';
 import mongoose from 'mongoose';
-const http = require('http');
+//const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 import app from './app';
+dotenv.config();
 
 const DB = process.env.DB!.replace(
   '<password>',
   process.env.PASSWORD as string
 )!;
-const port = process.env.PORT;
+// Should find the port on Heroku
+const port = process.env.PORT || 8000;
 // catch unhandled synchronous errors
 process.on('uncaughtException', (err) => {
   console.log(err.name, err.message);
@@ -30,10 +30,13 @@ process.on('uncaughtException', (err) => {
   }
 })();
 
-const httpsServer = https.createServer({
-  key: fs.readFileSync(path.join(__dirname, '../cert', 'key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, '../cert', 'cert.pem')),
-},app);
+const httpsServer = https.createServer(
+  {
+    key: fs.readFileSync(path.join(__dirname, '../cert', 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../cert', 'cert.pem')),
+  },
+  app
+);
 
 // connect to server
 const server = httpsServer.listen(port, () => {

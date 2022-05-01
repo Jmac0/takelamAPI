@@ -76,7 +76,6 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
       )
     }
 
-    console.log(req.floorPlan)
     next();
   }
 );

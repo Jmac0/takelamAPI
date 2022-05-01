@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const crypto = require('crypto');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
-const uniqueValidator = require('mongoose-unique-validator');
 
 interface UserInterface extends Document {
   name: string;
@@ -137,7 +136,7 @@ userSchema.methods.createResetToken = async function () {
     seconds: 0,
   })
 
-  console.log({resetToken}, this.passwordResetToken)
+  //console.log({resetToken}, this.passwordResetToken)
 
  return resetToken;
 };

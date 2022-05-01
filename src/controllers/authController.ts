@@ -59,7 +59,7 @@ const createAndSendToken = (user: User, statusCode: number, res: Response) => {
 };
 
 const createAdmin = catchAsyncErrors(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response) => {
     const newAdmin = await User.create({
       name: req.body.name,
       email: req.body.email,
@@ -85,7 +85,8 @@ const loginAdmin = catchAsyncErrors(
     // find user and add password to the selected data from db
     const user = await User.findOne({ email }).select('+password');
     // check user exists also Type-checks user is not undefined
-    if (!user) return next(new AppError('Username or password incorrect!', 401));
+    if (!user)
+      return next(new AppError('Username or password incorrect!', 401));
     // check password is correct, method in userModel
     const correctPw = await user.correctPassword(password, user.password);
     if (!correctPw)
@@ -133,8 +134,8 @@ const protect = catchAsyncErrors(
       .authorization;
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
-    }else if (req.cookies._taklam){
-      token = req.cookies._taklam
+    } else if (req.cookies._taklam) {
+      token = req.cookies._taklam;
     }
     // check if token exists
     if (!token)
@@ -162,17 +163,15 @@ const protect = catchAsyncErrors(
   }
 );
 
-
-
 const updateUser = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
-    const password = (req.body as { password: string }).password;
+    const passwordCurrent = (req.body as { passwordCurrent: string }).passwordCurrent;
 
     const user = await User.findOne(req.user._id).select('+password');
     if (!user) return next(new AppError('User not found', 401));
 
     const correctPw = await user!.correctPassword(
-      req.body.passwordCurrent,
+      passwordCurrent,
       user!.password
     );
 
@@ -208,9 +207,13 @@ const forgotPassword = catchAsyncErrors(
       await sendEmail({
         email: req.body.email,
         subject: 'Reset password, link (valid for 10 minutes)',
-        text: `reset password here ${resetLink}`,
+        // todo change to real url
+        html: `<p>TAKELAM</p>
+<p>Click <a href="https://localhost:3000/users/${resetLink}">here</a> to reset your password, 
+if you did not request this email please delete it! </p>`,
       });
     } catch (e) {
+      console.log(e)
       // if error delete token in db and expires time
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
@@ -231,7 +234,7 @@ const forgotPassword = catchAsyncErrors(
   }
 );
 
-const restPassword = catchAsyncErrors(
+const resetPassword = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     // get user based on token
     const hashedToken = crypto
@@ -239,19 +242,24 @@ const restPassword = catchAsyncErrors(
       .update(req.params.token)
       .digest('hex');
     // find user and check if token has expired, will not return a user if token is expired
-    const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } });
-    if (!user) return next(new AppError('Token is invalid or has expired', 400));
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+    if (!user)
+      return next(new AppError('Token is invalid or has expired', 400));
     // update password changed at property in db
     user.password = req.body.password;
     user.passwordConfirm = req.body.passwordConfirm;
-// delete fields
+    // delete fields
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-// save will run middleware
+    // save will run middleware
     await user.save();
     // log user in with jwt
-    createAndSendToken(user, 200, res)
-  });
+    createAndSendToken(user, 200, res);
+  }
+);
 
 export {
   protect,
@@ -260,5 +268,5 @@ export {
   loginAdmin,
   updateUser,
   forgotPassword,
-  restPassword,
+  resetPassword,
 };

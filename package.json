@@ -4,10 +4,12 @@
   "description": "Node/express REST API for Takelam",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon dist/server.js",
+    "dev": "nodemon dist/server.js",
+    "start": "node dist/server.js",
     "start:prod": "NODE_ENV=production nodemon dist/server.js",
     "debug": "ndb dist/server.js"
   },
+  "engines": { "node": "14.11.0" },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Jmac0/takelamAPI.git"

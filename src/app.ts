@@ -14,7 +14,7 @@ import linkRouter from './routers/authRouter';
 // import clientRouter from './routers/clientRouter';
 import AppError from './utils/appError';
 import globalErrorHandler from './controllers/errorController';
-
+require('dotenv').config();
 const app = express();
 
 if (process.env.NODE_ENV !== 'production') {
@@ -51,7 +51,6 @@ app.use(hpp());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
 
-  console.log(req.cookies)
 
   next();
 })
