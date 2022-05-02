@@ -29,12 +29,14 @@ const signToken = (id: ObjectId) => {
 };
 
 // set options for cookies
+/*
 const cookieOptions = {
   expires: new Date(Date.now() + Number(cookieExpires) * 24 * 60 * 60 * 1000),
   secure: true,
   sameSite: 'Secure',
   httpOnly: true,
 };
+*/
 
 // create and send JWT
 const createAndSendToken = (user: User, statusCode: number, res: Response) => {
@@ -45,7 +47,7 @@ const createAndSendToken = (user: User, statusCode: number, res: Response) => {
   //res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
   // @ts-ignore
-  res.cookie('_taklam', token, cookieOptions);
+  res.cookie('_taklam', token, { sameSite: 'none', secure: true });
   //  res.setHeader("set-cookie", [cookie]);
   return res.status(statusCode).json({
     status: 'success',
