@@ -192,7 +192,7 @@ const forgotPassword = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     // get user based on email
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return next(new AppError('No user found', 404));
+    if (!user) return next(new AppError('No user found with that email found', 404));
     // generate random token
     const resetToken = await user.createResetToken();
     // stops express asking for password
@@ -207,7 +207,7 @@ const forgotPassword = catchAsyncErrors(
         subject: 'Reset password, link (valid for 10 minutes)',
         // todo change to real url
         html: `<p>TAKELAM</p>
-<p>Click <a href="https://localhost:3000/users/${resetLink}">here</a> to reset your password, 
+<p>Click <a href=${resetLink}>here</a> to reset your password, 
 if you did not request this email please delete it! </p>`,
       });
     } catch (e) {
@@ -228,6 +228,7 @@ if you did not request this email please delete it! </p>`,
     res.status(200).json({
       status: 'success',
       message: 'Reset token sent to email',
+      resetLink
     });
   }
 );
