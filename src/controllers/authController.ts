@@ -256,7 +256,11 @@ const resetPassword = catchAsyncErrors(
     // save will run middleware
     await user.save();
     // log user in with jwt
-    createAndSendToken(user, 200, res);
+  //  createAndSendToken(user, 200, res);
+    res.status(200).json({
+      status: 'success',
+      message: 'Password has been reset',
+    });
   }
 );
 
