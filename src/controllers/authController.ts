@@ -20,7 +20,7 @@ interface User {
 interface UserRequest extends Request {
   user: User;
 }
-const cookieExpires = process.env.JWT_COOKIE_EXPIRES;
+// const cookieExpires = process.env.JWT_COOKIE_EXPIRES;
 
 const signToken = (id: ObjectId) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -39,18 +39,17 @@ const cookieOptions = {
 */
 
 // create and send JWT
-const createAndSendToken = (user: User, statusCode: number, res: Response) => {
+const createAndSendToken = (user: User, statusCode: number, res: Response, message ='') => {
   user.password = undefined;
   const token = signToken(user._id as ObjectId);
   // create cookie
   // response
   //res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
-  // @ts-ignore
   res.cookie('_taklam', token, { sameSite: 'none', secure: true, httpOnly: true });
-  //  res.setHeader("set-cookie", [cookie]);
   return res.status(statusCode).json({
     status: 'success',
+    message,
     token,
     user,
   });
@@ -155,7 +154,7 @@ const protect = catchAsyncErrors(
     // check if user changed passwords, compare date in db with decoded JWT iat
     const tokenActive = await currentUser.passwordChangedAfter(decoded.iat);
     if (tokenActive)
-      return next(new AppError('User recently changed passwords', 401));
+      return next(new AppError('User recently changed passwords please log in again', 401));
     req.user = currentUser;
     next();
   }
@@ -182,9 +181,9 @@ const updateUser = catchAsyncErrors(
 
     if (req.body.email) user!.email = req.body.email;
 
-    await user!.save();
-
-    createAndSendToken(user, 200, res);
+    await user!.save({validateBeforeSave: false});
+const message = 'Your user info was updated'
+    createAndSendToken(user, 200, res, message );
   }
 );
 
@@ -205,7 +204,6 @@ const forgotPassword = catchAsyncErrors(
       await sendEmail({
         email: req.body.email,
         subject: 'Reset password, link (valid for 10 minutes)',
-        // todo change to real url
         html: `<p>TAKELAM</p>
 <p>Click <a href=${resetLink}>here</a> to reset your password, 
 if you did not request this email please delete it! </p>`,
