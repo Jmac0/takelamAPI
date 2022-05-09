@@ -43,7 +43,7 @@ const createAndSendToken = (user: User, statusCode: number, res: Response, messa
   user.password = undefined;
   const token = signToken(user._id as ObjectId);
   // create cookie
-  res.cookie('_taklam', token, { sameSite: 'lax', secure: true, httpOnly: true, domain: 'www.takelamapi.com' });
+  res.cookie('_taklam', token, { sameSite: 'lax', secure: true, httpOnly: true, domain: '.takelamapi.com', path: '/login' });
   return res.status(statusCode).json({
     status: 'success',
     message,
