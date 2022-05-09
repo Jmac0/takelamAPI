@@ -1,9 +1,4 @@
-import {
-  NextFunction,
-  Request,
-  RequestHandler,
-  Response,
-} from 'express';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 import Property from '../models/propertyModel';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 import AppError from '../utils/appError';
@@ -22,7 +17,7 @@ interface ImageRequest extends Request {
   floorplanFiles: {}[];
   floorPlan: string[];
   propertyImages: {}[];
-  _id: string
+  _id: string;
 }
 interface ImageFile {
   originalname: string;
@@ -33,7 +28,7 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
-    if (!property) return new AppError('No property found', 404);
+    if (!property) return next(new AppError('No property found with that ID', 404));
     req.property = property;
     // check for files on request
     if (!req.files) return next();
@@ -41,7 +36,7 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
     req.floorplanFiles = [];
     req.propertyImages = [];
     // array of urls to images on cloud
-    req.floorPlan = []
+    req.floorPlan = [];
     // check the image name for floor plan
     const regex = /^floorplan/i;
     // map req array and separate images and floor plans
@@ -50,12 +45,10 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
       if (regex.test(image.originalname)) {
         req.floorplanFiles.push(image);
       } else {
-      req.propertyImages.push(image);
+        req.propertyImages.push(image);
       }
-
-
     });
-// upload floor plans to sub folder on cloud
+    // upload floor plans to sub folder on cloud
     if (req.floorplanFiles.length > 0) {
       await Promise.all(
         // new property on req object for cloudinary responses
@@ -70,10 +63,13 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
                 public_id: `${image.originalname.replace(/\.[^/.]+$/, '')}`,
                 folder: `${property.tag}/floorplan`,
                 use_filenames: true,
-              }).then((res: any) =>{req.floorPlan.push(res.secure_url)})
+              })
+              .then((res: any) => {
+                req.floorPlan.push(res.secure_url);
+              });
           }
         )
-      )
+      );
     }
 
     next();
@@ -129,29 +125,28 @@ const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
 
 const updateProperty: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
+
     // spread request object into new
-    const id = req.property._id
+    const id = req.property._id;
     // convert coords string to an array of numbers and add to body
     if (!req.body.cords)
       return next(new AppError('Please enter coordinates to create map', 400));
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
-    const body = { ...req.body,  cords };
-    if (req.floorPlan.length > 0) body.floorPlan = req.floorPlan
+    const body = { ...req.body, cords };
+    if (req.floorPlan.length > 0) body.floorPlan = req.floorPlan;
 
-    const property = await Property.findByIdAndUpdate(id, body, {
+    await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
-    });
+    } );
 
-    if (!property) {
-      return next(new AppError('No property found', 404));
-    }
 
-    res.status(204).json({
-      status: 'ok',
+    res.status(201).json({
+      message: 'Property successfully updated',
     });
   }
 );
+
 const getAllProperties: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const properties = await Property.find();
@@ -188,11 +183,11 @@ const createProperty: RequestHandler = catchAsyncErrors(
 
     res.status(201).json({
       status: 'Ok',
+      message: 'New property created ok',
       content: newProperty,
     });
   }
 );
-
 
 const deleteProperty = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -231,8 +226,7 @@ const getPropertyClient: RequestHandler = catchAsyncErrors(
     const active = isFuture(date);
     // send link expired message if over seven days old
     if (!active) {
-
-     return  res.status(400).json({
+      return res.status(400).json({
         response: 'Link expired please contact us for help',
       });
     }

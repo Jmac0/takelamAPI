@@ -43,9 +43,6 @@ const createAndSendToken = (user: User, statusCode: number, res: Response, messa
   user.password = undefined;
   const token = signToken(user._id as ObjectId);
   // create cookie
-  // response
-  //res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-
   res.cookie('_taklam', token, { sameSite: 'none', secure: true, httpOnly: true });
   return res.status(statusCode).json({
     status: 'success',
