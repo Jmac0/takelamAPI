@@ -124,8 +124,7 @@ const protect = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     // get token from headers
     let token;
-    const authorization = (req.cookies as { authorization: string })
-      .authorization;
+    const authorization = (req.headers as { authorization: string }).authorization;
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
     } else if (req.cookies._taklam) {
