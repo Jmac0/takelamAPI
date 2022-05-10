@@ -195,7 +195,7 @@ const deleteProperty = catchAsyncErrors(
     const property = await Property.findByIdAndDelete(id);
 
     if (!property) {
-      /*todo delete images from cloud*/
+      /*todo delete images from cloud ?*/
       return next(new AppError(`Property: ${id} not found `, 404));
     }
     res.status(204).json({
