@@ -28,7 +28,8 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
-    if (!property) return next(new AppError('No property found with that ID', 404));
+    if (!property)
+      return next(new AppError('No property found with that ID', 404));
     req.property = property;
     // check for files on request
     if (!req.files) return next();
@@ -125,7 +126,6 @@ const uploadImagesToCloud: RequestHandler = catchAsyncErrors(
 
 const updateProperty: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
-
     // spread request object into new
     const id = req.property._id;
     // convert coords string to an array of numbers and add to body
@@ -138,8 +138,7 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
-    } );
-
+    });
 
     res.status(201).json({
       message: 'Property successfully updated',
@@ -214,6 +213,9 @@ const getPropertyClient: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const key = process.env.LINK_SECRET;
     let id = (req.params as { id: string }).id;
+    // replace any - with % that were added in when the link was created
+    const search = /-/gi;
+    id = id.replace(search, '%');
     // decode + add back any slashes to encrypted link
     const decoded = decodeURIComponent(id);
     // decrypt object back to original

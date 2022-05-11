@@ -112,6 +112,8 @@ const createSecureLink = catchAsyncErrors(
     ).toString();
     // Remove slashes form encrypted string, so it works in the url
     encryptData = encodeURIComponent(encryptData);
+    const search = /%/gi;
+    encryptData = encryptData.replace(search,"-");
     // create client link
     const link = `${baseUrl}/property/view/${encryptData}`;
     res.status(200).json({
@@ -125,6 +127,7 @@ const protect = catchAsyncErrors(
     // get token from headers
     let token;
     const authorization = (req.headers as { authorization: string }).authorization;
+    console.log(authorization);
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
     } else if (req.cookies._taklam) {
