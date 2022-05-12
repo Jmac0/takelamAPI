@@ -190,7 +190,7 @@ const forgotPassword = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     // get user based on email
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return next(new AppError('No user found with that email found', 404));
+    if (!user) return next(new AppError('No user with that email found', 404));
     // generate random token
     const resetToken = await user.createResetToken();
     // stops express asking for password

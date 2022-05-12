@@ -44,6 +44,7 @@ const updateContent: RequestHandler = catchAsyncErrors(
 
     res.status(200).json({
       status: 'ok',
+      message: 'Page successfully updated',
       data: content,
     });
   }
