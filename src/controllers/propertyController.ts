@@ -24,6 +24,12 @@ interface ImageFile {
   path: string;
 }
 
+
+
+const removeSpecialCharacters = (value: string): string  => {
+  return value.replace(/[^a-zA-Z ]/g, ' ');
+}
+
 const uploadFloorPlan: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
@@ -140,6 +146,8 @@ const updateProperty: RequestHandler = catchAsyncErrors(
         new AppError('Invalid coordinates! Please paste from Google Maps', 400)
       );
     }
+
+    req.body.title = removeSpecialCharacters(req.body.title);
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     let body = { ...req.body, cords };
     console.log(req.body.floorPlan);
@@ -188,8 +196,15 @@ const getProperty: RequestHandler = catchAsyncErrors(
   }
 );
 const createProperty: RequestHandler = catchAsyncErrors(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     // convert coords string to an array of numbers and add to body
+    if (!req.body.cords.includes(',')) {
+      return next(
+        new AppError('Invalid coordinates! Please paste from Google Maps', 400)
+      );
+    }
+    req.body.tag = removeSpecialCharacters(req.body.tag);
+    req.body.title = removeSpecialCharacters(req.body.title);
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     const body = { ...req.body, cords };
     const newProperty = await Property.create(body);

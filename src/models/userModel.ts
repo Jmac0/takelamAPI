@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema<UserInterface>({
 });
 
 userSchema.pre('save', async function (next) {
+
   // check if the password is different form the stored password
   if (!this.isModified('password')) return next();
   // Salt and hash password
@@ -131,7 +132,6 @@ userSchema.methods.createResetToken = async function () {
     seconds: 0,
   })
 
-  //console.log({resetToken}, this.passwordResetToken)
 
  return resetToken;
 };
