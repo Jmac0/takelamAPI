@@ -32,12 +32,17 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
       return next(new AppError('No property found with that ID', 404));
     req.property = property;
     // check for files on request
-    if (!req.files) return next();
+    // @ts-ignore
+
+    if (req.files === []) {
+
+      return next();
+    }
     // create separate arrays for floor plans and images
     req.floorplanFiles = [];
     req.propertyImages = [];
     // array of urls to images on cloud
-    req.floorPlan = [];
+    req.body.floorPlan = [];
     // check the image name for floor plan
     const regex = /^floorplan/i;
     // map req array and separate images and floor plans
@@ -66,7 +71,7 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
                 use_filenames: true,
               })
               .then((res: any) => {
-                req.floorPlan.push(res.secure_url);
+                req.body.floorPlan.push(res.secure_url);
               });
           }
         )
@@ -132,9 +137,15 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     if (!req.body.cords)
       return next(new AppError('Please enter coordinates to create map', 400));
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
-    const body = { ...req.body, cords };
-    if (req.floorPlan.length > 0) body.floorPlan = req.floorPlan;
+    let body = { ...req.body, cords };
+    console.log(req.body.floorPlan)
+    if (body.floorPlan.length === 0)  {
+    delete body.floorPlan
+      console.log('entered block ')
 
+    }
+
+console.log()
     await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,

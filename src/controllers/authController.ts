@@ -54,7 +54,7 @@ const createAndSendToken = (user: User, statusCode: number, res: Response, messa
 
 const createAdmin = catchAsyncErrors(
   async (req: Request, res: Response) => {
-    const newAdmin = await User.create({
+    await User.create({
       name: req.body.name,
       email: req.body.email,
       password: req.body.password,
@@ -62,7 +62,12 @@ const createAdmin = catchAsyncErrors(
       passwordChangedAt: req.body.passwordChangedAt,
     });
 
-    createAndSendToken(newAdmin, 201, res);
+//    createAndSendToken(newAdmin, 201, res, 'New Administrator Created');
+
+
+    res.status(200).json({
+      message: 'New admin successfully Created',
+    });
   }
 );
 
@@ -127,7 +132,6 @@ const protect = catchAsyncErrors(
     // get token from headers
     let token;
     const authorization = (req.headers as { authorization: string }).authorization;
-    console.log(authorization);
     if (authorization && authorization.startsWith('Bearer')) {
       token = authorization.split(' ')[1];
     } else if (req.cookies._taklam) {
@@ -208,7 +212,6 @@ const forgotPassword = catchAsyncErrors(
 if you did not request this email please delete it! </p>`,
       });
     } catch (e) {
-      console.log(e)
       // if error delete token in db and expires time
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;

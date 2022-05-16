@@ -5,7 +5,6 @@ const validator = require('validator');
 const bcrypt = require('bcrypt');
 
 interface UserInterface extends Document {
-  name: string;
   email: { tag: string; unique: boolean };
   password: string;
   passwordConfirm: string;
@@ -19,10 +18,6 @@ interface UserInterface extends Document {
 }
 
 const userSchema = new mongoose.Schema<UserInterface>({
-  name: {
-    type: String,
-    required: [true, 'Please provide a username '],
-  },
   email: {
     type: String,
     required: [true, 'Please enter an email address'],
