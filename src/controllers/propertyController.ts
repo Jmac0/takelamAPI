@@ -35,7 +35,6 @@ const uploadFloorPlan: RequestHandler = catchAsyncErrors(
     // @ts-ignore
 
     if (req.files === []) {
-
       return next();
     }
     // create separate arrays for floor plans and images
@@ -136,16 +135,20 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     // convert coords string to an array of numbers and add to body
     if (!req.body.cords)
       return next(new AppError('Please enter coordinates to create map', 400));
+    if (!req.body.cords.includes(',')) {
+      return next(
+        new AppError('Invalid coordinates! Please paste from Google Maps', 400)
+      );
+    }
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     let body = { ...req.body, cords };
-    console.log(req.body.floorPlan)
-    if (body.floorPlan.length === 0)  {
-    delete body.floorPlan
-      console.log('entered block ')
-
+    console.log(req.body.floorPlan);
+    if (body.floorPlan.length === 0) {
+      delete body.floorPlan;
+      console.log('entered block ');
     }
 
-console.log()
+    console.log();
     await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
