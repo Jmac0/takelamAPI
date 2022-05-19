@@ -1,7 +1,7 @@
 import 'dotenv/config';
 const helmet = require('helmet');
 const hpp = require('hpp');
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 const rateLimit = require('express-rate-limit');
 import cors from 'cors';
 import morgan from 'morgan';
@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const mongoSanitizer = require('express-mongo-sanitize');
 import contentRouter from './routers/contentRouter';
 import propertyRouter from './routers/propertyRouter';
+import refreshLoginRouter from './routers/refreshLoginRouter';
 import authRouter from './routers/authRouter';
 import linkRouter from './routers/authRouter';
 // import clientRouter from './routers/clientRouter';
@@ -53,16 +54,18 @@ app.use(mongoSanitizer());
 app.use(hpp());
 
 
-app.use((req: Request, res: Response, next: NextFunction) => {
+/*
+app.use('/api/v1/auth',(req: Request, res: Response, next: NextFunction) => {
 
-console.log(req.cookies)
+res.status(123)
   next();
 })
+*/
 
-
+// for persistent login
+app.use('/api/v1/auth', refreshLoginRouter);
 app.use('/api/v1/content', contentRouter);
 app.use('/api/v1/properties', propertyRouter);
-
 app.use('/api/v1/users', authRouter);
 // create encoded link from date and property id
 app.use('/api/v1/link', linkRouter);

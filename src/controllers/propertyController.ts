@@ -150,13 +150,10 @@ const updateProperty: RequestHandler = catchAsyncErrors(
     req.body.title = removeSpecialCharacters(req.body.title);
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     let body = { ...req.body, cords };
-    console.log(req.body.floorPlan);
     if (body.floorPlan.length === 0) {
       delete body.floorPlan;
-      console.log('entered block ');
     }
 
-    console.log();
     await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
