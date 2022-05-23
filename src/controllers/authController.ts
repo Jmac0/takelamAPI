@@ -164,14 +164,14 @@ const createSecureLink = catchAsyncErrors(
   }
 );
 
-    // Validate jwt for persistent login
+// Validate jwt for persistent login
 const isAuth = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     await validateJWT(req, res, next);
     res.status(200).json({ message: 'ok' });
   }
 );
-    // validate jwt and call next middleware with protected route
+// validate jwt and call next middleware with protected route
 const protect = catchAsyncErrors(
   async (req: UserRequest, res: Response, next: NextFunction) => {
     await validateJWT(req, res, next);

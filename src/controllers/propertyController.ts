@@ -183,7 +183,6 @@ const getProperty: RequestHandler = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
     const property = await Property.findById(id);
-
     if (!property) {
       return next(new AppError(`Property not found`, 404));
     }
@@ -248,14 +247,15 @@ const getPropertyClient: RequestHandler = catchAsyncErrors(
     const bytes = CryptoJS.AES.decrypt(`${decoded}`, `${key}`);
     const linkData: LinkObject = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
     const { propertyId, expires } = linkData;
+    console.log(linkData)
     // create readable date from object data
     const date = new Date(expires);
     // check if the date is still in the future
     const active = isFuture(date);
     // send link expired message if over seven days old
     if (!active) {
-      return res.status(400).json({
-        response: 'Link expired please contact us for help',
+      return res.status(403).json({
+        message: 'Link expired please contact us for help',
       });
     }
     // get property
