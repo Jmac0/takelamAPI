@@ -6,7 +6,7 @@ dotenv.config();
 const DB = process.env.DB!.replace(
   '<password>',
   process.env.PASSWORD as string
-)!;
+);
 // Should find the port on Heroku
 const port = process.env.PORT || 8000;
 // catch unhandled synchronous errors

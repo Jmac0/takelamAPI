@@ -38,7 +38,7 @@ const propertySchema = new mongoose.Schema<PropertyInterface>({
   },
 
   price: {
-    type: Number,
+    type: String,
   },
 
   location: {

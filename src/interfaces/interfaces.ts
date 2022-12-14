@@ -8,7 +8,7 @@ interface PropertyInterface {
   buildSize: number;
   bedrooms: number;
   bathrooms: number;
-  price: number;
+  price: string;
   location: string;
   cords: {cords: string[]; required: true }
   floorPlan: [string];

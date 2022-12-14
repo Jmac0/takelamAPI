@@ -54,13 +54,12 @@ app.use(mongoSanitizer());
 app.use(hpp());
 
 
-/*
-app.use('/api/v1/auth',(req: Request, res: Response, next: NextFunction) => {
 
-res.status(123)
-  next();
-})
-*/
+//app.use('/api/v1/auth',(req: Request, res: Response, next: NextFunction) => {
+
+//res.status(123)
+//  next();
+//})
 
 // for persistent login
 app.use('/api/v1/auth', refreshLoginRouter);
