@@ -23,13 +23,22 @@ interface ImageFile {
   originalname: string;
   path: string;
 }
+//Format image tag used to link to cloudinary Trim all spaces, removes special chars, and make uppercase
+const formatTag = (value: string): string => {
+  const formattedTag = value
+    .replace(/[^a-zA-Z ]/g, ' ')
+    .replace(/\s/g, '')
+    .toUpperCase()
+    .trim();
 
+  return formattedTag;
+};
+// Remove whitespace from ends and replace special chars with a space
+const formatTitle = (value: string): string => {
+  const formattedString = value.replace(/[^a-zA-Z ]/g, ' ').trim();
 
-
-const removeSpecialCharacters = (value: string): string  => {
-  return value.replace(/[^a-zA-Z ]/g, ' ');
-}
-
+  return formattedString;
+};
 const uploadFloorPlan: RequestHandler = catchAsyncErrors(
   async (req: ImageRequest, res: Response, next: NextFunction) => {
     const id = (req.params as { id: string }).id;
@@ -147,13 +156,15 @@ const updateProperty: RequestHandler = catchAsyncErrors(
       );
     }
 
-    req.body.title = removeSpecialCharacters(req.body.title);
+    // form title string, removes special chars
+    req.body.title = formatTitle(req.body.title);
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     let body = { ...req.body, cords };
+    // remove tag from body on update
+    delete body.tag;
     if (body.floorPlan.length === 0) {
       delete body.floorPlan;
     }
-
     await Property.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
@@ -199,8 +210,8 @@ const createProperty: RequestHandler = catchAsyncErrors(
         new AppError('Invalid coordinates! Please paste from Google Maps', 400)
       );
     }
-    req.body.tag = removeSpecialCharacters(req.body.tag);
-    req.body.title = removeSpecialCharacters(req.body.title);
+    req.body.tag = formatTag(req.body.tag);
+    req.body.title = formatTitle(req.body.title);
     const cords = req.body.cords.split(',').map((el: string) => Number(el));
     const body = { ...req.body, cords };
     const newProperty = await Property.create(body);
@@ -247,7 +258,7 @@ const getPropertyClient: RequestHandler = catchAsyncErrors(
     const bytes = CryptoJS.AES.decrypt(`${decoded}`, `${key}`);
     const linkData: LinkObject = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
     const { propertyId, expires } = linkData;
-    console.log(linkData)
+    console.log(linkData);
     // create readable date from object data
     const date = new Date(expires);
     // check if the date is still in the future

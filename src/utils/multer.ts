@@ -3,7 +3,7 @@ type FileFilterCallback = (error: Error | null, fileType: boolean) => void;
 // Multer config
 
 module.exports = multer({
-  // was using disk storage
+  // Upload multiple files, this puts
   storage: multer.diskStorage({}),
   fileFilter: (
     req: Request,
